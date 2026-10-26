@@ -1,0 +1,6 @@
+{
+  "name": "คัมภีร์ยุทธซ่างซวดลวดFix it",
+  "description": "ระบบบันทึกคัมภีร์งานซ่อม วิเคราะห์อาการเสีย Visual Check, Function Check, Root Cause และแนวทางแก้ไข พร้อมคลังความรู้ช่างและระบบจัดการสาขา",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
