@@ -242,7 +242,7 @@ export default function App() {
     setRevisions(updated);
   };
 
-  const activeRevision = revisions[0]?.revision || 'Rev 1.3.0';
+  const activeRevision = revisions[0]?.revision || 'Rev 1.4.0';
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col text-slate-800 font-sans selection:bg-amber-400 selection:text-slate-950">
