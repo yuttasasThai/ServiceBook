@@ -91,19 +91,22 @@ export const Navigation: React.FC<NavigationProps> = ({
       label: 'ตั้งค่าร้าน',
       shortLabel: 'ตั้งค่า',
       icon: Settings,
+      adminOnly: true,
       desc: 'เปลี่ยนรูปหน้าปก ชื่อ เบอร์โทร ไลน์',
     },
   ];
+
+  // Filter out admin tabs for branch users
+  const visibleTabs = tabs.filter((tab) => !(tab.adminOnly && session.role !== 'admin'));
 
   return (
     <nav className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30 print:hidden">
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-1 overflow-x-auto py-2 scrollbar-thin">
           <div className="flex items-center space-x-1 sm:space-x-2 min-w-max">
-            {tabs.map((tab) => {
+            {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
-              const isRestricted = tab.adminOnly && session.role !== 'admin';
 
               return (
                 <button
@@ -138,12 +141,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                   {tab.badge && !isActive && (
                     <span className="hidden xl:inline-block text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-normal">
                       {tab.badge}
-                    </span>
-                  )}
-
-                  {isRestricted && (
-                    <span className="text-[10px] bg-slate-200 text-slate-600 px-1 rounded">
-                      Admin
                     </span>
                   )}
                 </button>

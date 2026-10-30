@@ -248,46 +248,51 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* ปุ่มดาวน์โหลด Source Code .ZIP สำหรับ GitHub / Vercel */}
-            <button
-              onClick={handleDownloadZip}
-              title="ดาวน์โหลด Source Code ทั้งหมดเป็นไฟล์ .ZIP แท้ (สำหรับ GitHub & Vercel)"
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] sm:text-xs font-bold transition shadow-xs cursor-pointer ${
-                downloadSuccess
-                  ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/60'
-                  : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/50 hover:border-amber-400'
-              }`}
-            >
-              {downloadSuccess ? (
-                <>
-                  <Check className="w-2.5 h-2.5 text-emerald-400" />
-                  <span>โหลด .ZIP สำเร็จ!</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-2.5 h-2.5 text-amber-400" />
-                  <span>โหลด Source (.ZIP)</span>
-                </>
-              )}
-            </button>
+            {/* ปุ่มดาวน์โหลด Source Code .ZIP - เฉพาะ Admin เท่านั้น */}
+            {session.role === 'admin' && (
+              <button
+                onClick={handleDownloadZip}
+                title="ดาวน์โหลด Source Code ทั้งหมดเป็นไฟล์ .ZIP แท้ (สำหรับ GitHub & Vercel)"
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] sm:text-xs font-bold transition shadow-xs cursor-pointer ${
+                  downloadSuccess
+                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/60'
+                    : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/50 hover:border-amber-400'
+                }`}
+              >
+                {downloadSuccess ? (
+                  <>
+                    <Check className="w-2.5 h-2.5 text-emerald-400" />
+                    <span>โหลด .ZIP สำเร็จ!</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-2.5 h-2.5 text-amber-400" />
+                    <span>โหลด Source (.ZIP)</span>
+                  </>
+                )}
+              </button>
+            )}
 
-            <button
-              onClick={onOpenSettings}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-500/40 text-[10px] sm:text-xs font-semibold transition cursor-pointer hover:border-amber-400"
-              title="เปลี่ยนรูปหน้าปก & ข้อมูลร้าน"
-            >
-              <Camera className="w-3 h-3 text-amber-400" />
-              <span className="hidden sm:inline">เปลี่ยนรูปหน้าปก / </span>ข้อมูลร้าน
-            </button>
+            {/* ปุ่มแก้ไขข้อมูลร้าน & หน้าปก - เฉพาะ Admin เท่านั้น */}
+            {session.role === 'admin' && (
+              <button
+                onClick={onOpenSettings}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-500/40 text-[10px] sm:text-xs font-semibold transition cursor-pointer hover:border-amber-400"
+                title="เปลี่ยนรูปหน้าปก & ข้อมูลร้าน"
+              >
+                <Camera className="w-3 h-3 text-amber-400" />
+                <span className="hidden sm:inline">เปลี่ยนรูปหน้าปก / </span>ข้อมูลร้าน
+              </button>
+            )}
 
             {session.isLoggedIn ? (
               <button
                 onClick={onLogout}
-                title="สลับผู้ใช้งาน"
+                title={session.role === 'admin' ? 'สลับผู้ใช้งาน' : 'ออกจากระบบสาขา'}
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 text-[10px] sm:text-xs transition cursor-pointer"
               >
                 <LogOut className="w-2.5 h-2.5" />
-                <span className="hidden sm:inline">สลับผู้ใช้</span>
+                <span>{session.role === 'admin' ? 'สลับผู้ใช้' : 'ออกจากระบบ'}</span>
               </button>
             ) : (
               <button

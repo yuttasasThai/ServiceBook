@@ -101,7 +101,11 @@ export const AdminBranchManager: React.FC<AdminBranchManagerProps> = ({
 
     const currentOrigin = window.location.origin;
     const finalCode = branchCode.trim() || `B-${Date.now().toString().slice(-4)}`;
-    const fullShareUrl = `${currentOrigin}?branch=${encodeURIComponent(finalCode)}`;
+    const urlParams = new URLSearchParams();
+    urlParams.set('branch', finalCode);
+    urlParams.set('bname', name.trim());
+    urlParams.set('exp', expiryDate);
+    const fullShareUrl = `${currentOrigin}?${urlParams.toString()}`;
 
     const branchData: BranchUser = {
       id: isEditing || `branch-${Date.now()}`,
@@ -126,7 +130,11 @@ export const AdminBranchManager: React.FC<AdminBranchManagerProps> = ({
 
   const handleCopyLink = (branch: BranchUser) => {
     const currentOrigin = window.location.origin;
-    const linkToCopy = `${currentOrigin}?branch=${encodeURIComponent(branch.branchCode)}`;
+    const urlParams = new URLSearchParams();
+    urlParams.set('branch', branch.branchCode);
+    if (branch.name) urlParams.set('bname', branch.name);
+    if (branch.expiryDate) urlParams.set('exp', branch.expiryDate);
+    const linkToCopy = `${currentOrigin}?${urlParams.toString()}`;
     navigator.clipboard.writeText(linkToCopy);
     setCopiedId(branch.id);
     setTimeout(() => setCopiedId(null), 2500);
