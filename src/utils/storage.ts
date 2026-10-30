@@ -206,13 +206,72 @@ export function getCategories(repairs: RepairEntry[]): string[] {
 
 // Auth Session
 export function getAuthSession(): AuthSession {
+  // 1. Check if URL explicitly contains branch query param (e.g. ?branch=TEST01)
+  if (typeof window !== 'undefined' && window.location.search) {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const branchParam = urlParams.get('branch');
+      if (branchParam && branchParam.trim()) {
+        const bCode = branchParam.trim();
+        const bNameParam = urlParams.get('bname') || urlParams.get('name');
+        const expParam = urlParams.get('exp');
+
+        const allBranches = getBranchUsers();
+        const found = allBranches.find(
+          (b) => b.branchCode.toUpperCase() === bCode.toUpperCase()
+        );
+
+        const finalName = found?.name || (bNameParam ? decodeURIComponent(bNameParam) : `สาขา ${bCode}`);
+        const finalExpiry =
+          found?.expiryDate ||
+          expParam ||
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        // If this branch is not yet in the local device's branch list, save it
+        if (!found) {
+          const autoBranch: BranchUser = {
+            id: `branch-${bCode.toLowerCase()}`,
+            name: finalName,
+            phone: '',
+            branchCode: bCode,
+            shareUrl: `?branch=${encodeURIComponent(bCode)}`,
+            username: `user_${bCode.toLowerCase()}`,
+            password: '',
+            expiryDate: finalExpiry,
+            isActive: true,
+            createdAt: new Date().toISOString().split('T')[0],
+            notes: 'บันทึกอัตโนมัติจากลิงก์สาขา',
+          };
+          saveBranchUsers([...allBranches, autoBranch]);
+        }
+
+        const branchSession: AuthSession = {
+          isLoggedIn: true,
+          role: 'branch_user',
+          branchId: found?.id || `branch-${bCode.toLowerCase()}`,
+          branchCode: bCode,
+          branchName: finalName,
+          username: found?.username || bCode.toLowerCase(),
+          expiresAt: finalExpiry,
+        };
+
+        saveAuthSession(branchSession);
+        return branchSession;
+      }
+    } catch (e) {
+      console.error('Failed to parse branch query param in getAuthSession', e);
+    }
+  }
+
+  // 2. Read existing session from localStorage
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SESSION);
     if (raw) return JSON.parse(raw);
   } catch (err) {
     console.error('Failed to read auth session', err);
   }
-  // Default to Admin in demo mode, but can be changed or set by URL param
+
+  // 3. Default to Admin in demo mode
   return {
     isLoggedIn: true,
     role: 'admin',
