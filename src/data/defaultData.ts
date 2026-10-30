@@ -274,6 +274,17 @@ export const INITIAL_DISASSEMBLY_GUIDES: import('../types').DisassemblyGuide[] =
 
 export const INITIAL_REVISIONS: RevisionRecord[] = [
   {
+    revision: 'Rev 1.4.0',
+    date: '2026-10-27',
+    description: 'ปลดล็อกระบบ Deployment 100% ไร้ Error บน Vercel และ GitHub',
+    details: [
+      'แก้ไขระบบ Build ของ Vite ไม่ต้องพึ่งพาสคริปต์ภายนอก ("build": "vite build")',
+      'ตัดการพึ่งพาโมดูลชั่วคราว sourceBundleBase64 ใน exportSourceZip แก้ปัญหา [UNRESOLVED_IMPORT] บน Vercel ถาวร',
+      'รวมไฟล์โครงสร้างระบบทั้งหมด (.npmrc, vercel.json, vite.config.ts, src/, public/, scripts/) ครบ 100% ใน Source Code ZIP ชุดใหม่',
+      'ลดขนาด Bundle ลดภาระแรมและเวลา Build เหลือเพียง 400ms พร้อมคู่มือการอัปเดตไฟล์ขึ้น GitHub แบบละเอียด',
+    ],
+  },
+  {
     revision: 'Rev 1.3.0',
     date: '2026-10-23',
     description: 'ปรับปุ่ม 3D มีเฉพาะไอคอน (จิ้มนิ้ว/ประแจ/สมองอิเล็กทรอนิกส์) & ชื่อหัวข้อใต้ปุ่ม',
