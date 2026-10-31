@@ -19,6 +19,7 @@ interface NavigationProps {
   guideCount: number;
   branchCount: number;
   session: AuthSession;
+  onOpenBranchSettings?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -29,6 +30,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   guideCount,
   branchCount,
   session,
+  onOpenBranchSettings,
 }) => {
   const tabs = [
     {
@@ -96,6 +98,24 @@ export const Navigation: React.FC<NavigationProps> = ({
     },
   ];
 
+  // If in branch portal mode and not logged in, show locked state banner
+  if (session.role === 'branch_user' && !session.isLoggedIn) {
+    return (
+      <nav className="bg-slate-900 border-b border-amber-500/40 shadow-sm sticky top-0 z-30 print:hidden text-amber-200 text-xs py-2.5 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="font-bold">ระบบเฉพาะสาขา: {session.branchName || session.branchCode}</span>
+            <span className="text-slate-400 hidden sm:inline">| กรุณากรอกรหัสผ่านเพื่อเข้าใช้งานคัมภีร์</span>
+          </div>
+          <span className="text-[11px] font-semibold text-amber-300/90 bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-500/40">
+            🔒 ลิงก์สาขาอิสระ
+          </span>
+        </div>
+      </nav>
+    );
+  }
+
   // Filter out admin tabs for branch users
   const visibleTabs = tabs.filter((tab) => !(tab.adminOnly && session.role !== 'admin'));
 
@@ -150,9 +170,21 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           {/* Quick Notice if active as branch user */}
           {session.role === 'branch_user' && (
-            <div className="hidden lg:flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 px-3 py-1 rounded-lg border border-amber-200">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>โหมดสาขา: {session.branchName}</span>
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>โหมดสาขา: {session.branchName}</span>
+              </div>
+              {onOpenBranchSettings && (
+                <button
+                  onClick={onOpenBranchSettings}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 border border-amber-300 text-xs font-bold transition cursor-pointer"
+                  title="ปรับแต่งภาพหน้าปกและข้อมูลสาขาตัวเอง"
+                >
+                  <Settings className="w-3.5 h-3.5 text-amber-700" />
+                  <span>ตั้งค่าสาขา</span>
+                </button>
+              )}
             </div>
           )}
         </div>

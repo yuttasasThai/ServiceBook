@@ -17,6 +17,7 @@ import {
   User,
   Download,
   Check,
+  RotateCcw,
 } from 'lucide-react';
 
 interface HeaderBannerProps {
@@ -27,6 +28,8 @@ interface HeaderBannerProps {
   onOpenLoginModal: () => void;
   onLogout: () => void;
   onOpenRevisionModal: () => void;
+  onOpenResetModal: () => void;
+  onOpenBranchSettings?: () => void;
 }
 
 export const HeaderBanner: React.FC<HeaderBannerProps> = ({
@@ -37,6 +40,8 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
   onOpenLoginModal,
   onLogout,
   onOpenRevisionModal,
+  onOpenResetModal,
+  onOpenBranchSettings,
 }) => {
   const expiryStatus = session.expiresAt ? checkBranchExpiry(session.expiresAt) : null;
   const [downloadSuccess, setDownloadSuccess] = useState(false);
@@ -248,6 +253,16 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* ปุ่มรีเซ็ตค่าเริ่มต้น / เคลียร์งานเก่า */}
+            <button
+              onClick={onOpenResetModal}
+              title="เคลียร์งานเก่าทั้งหมดเพื่อเริ่มใหม่ หรือคืนค่าเริ่มต้นโรงงาน"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 text-[10px] sm:text-xs font-semibold transition cursor-pointer hover:border-amber-400"
+            >
+              <RotateCcw className="w-2.5 h-2.5 text-amber-400" />
+              <span className="hidden sm:inline">เคลียร์งาน / </span>รีเซ็ต
+            </button>
+
             {/* ปุ่มดาวน์โหลด Source Code .ZIP - เฉพาะ Admin เท่านั้น */}
             {session.role === 'admin' && (
               <button
@@ -278,28 +293,52 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
               <button
                 onClick={onOpenSettings}
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-500/40 text-[10px] sm:text-xs font-semibold transition cursor-pointer hover:border-amber-400"
-                title="เปลี่ยนรูปหน้าปก & ข้อมูลร้าน"
+                title="เปลี่ยนรูปหน้าปก & ข้อมูลร้าน (สำนักงานใหญ่)"
               >
                 <Camera className="w-3 h-3 text-amber-400" />
                 <span className="hidden sm:inline">เปลี่ยนรูปหน้าปก / </span>ข้อมูลร้าน
               </button>
             )}
 
+            {/* ปุ่มตั้งค่าข้อมูลสาขา & รูปหน้าปก - เฉพาะ โหมดสาขา (ไม่เข้าถึงการสร้างลิงก์) */}
+            {session.role === 'branch_user' && onOpenBranchSettings && (
+              <button
+                onClick={onOpenBranchSettings}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/25 hover:bg-amber-500/35 text-amber-300 border border-amber-500/50 text-[10px] sm:text-xs font-bold transition cursor-pointer hover:border-amber-400 shadow-xs"
+                title="ตั้งค่าภาพหน้าปก ชื่อร้าน เบอร์ และ LINE เฉพาะสาขาของคุณ (ไม่เข้าถึงหน้าสร้างลิงก์)"
+              >
+                <Camera className="w-3 h-3 text-amber-400" />
+                <span>ตั้งค่าหน้าปก / สาขา</span>
+              </button>
+            )}
+
             {session.isLoggedIn ? (
               <button
                 onClick={onLogout}
-                title={session.role === 'admin' ? 'สลับผู้ใช้งาน' : 'ออกจากระบบสาขา'}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 text-[10px] sm:text-xs transition cursor-pointer"
+                title={
+                  session.role === 'branch_user'
+                    ? 'ออกจากระบบสาขา (จะยังคงอยู่ในลิงก์สาขานี้ ไม่เด้งเข้า Admin)'
+                    : 'ออกจากระบบ / สลับผู้ใช้งาน'
+                }
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] sm:text-xs font-bold transition cursor-pointer ${
+                  session.role === 'branch_user'
+                    ? 'bg-rose-950/70 hover:bg-rose-900 text-rose-300 border-rose-700/60 shadow-xs hover:border-rose-500'
+                    : 'bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40'
+                }`}
               >
                 <LogOut className="w-2.5 h-2.5" />
-                <span>{session.role === 'admin' ? 'สลับผู้ใช้' : 'ออกจากระบบ'}</span>
+                <span>
+                  {session.role === 'branch_user' ? 'ออกจากระบบสาขา' : 'ออกจากระบบ'}
+                </span>
               </button>
             ) : (
               <button
                 onClick={onOpenLoginModal}
                 className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold text-[10px] sm:text-xs transition cursor-pointer shadow-xs"
               >
-                <span>เข้าสู่ระบบ</span>
+                <span>
+                  {session.role === 'branch_user' ? 'เข้าสู่ระบบสาขา' : 'เข้าสู่ระบบ'}
+                </span>
               </button>
             )}
           </div>

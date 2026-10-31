@@ -105,6 +105,12 @@ export const AdminBranchManager: React.FC<AdminBranchManagerProps> = ({
     urlParams.set('branch', finalCode);
     urlParams.set('bname', name.trim());
     urlParams.set('exp', expiryDate);
+    urlParams.set('u', username.trim());
+    try {
+      urlParams.set('p', btoa(encodeURIComponent(password.trim())));
+    } catch {
+      urlParams.set('p', password.trim());
+    }
     const fullShareUrl = `${currentOrigin}?${urlParams.toString()}`;
 
     const branchData: BranchUser = {
@@ -134,6 +140,14 @@ export const AdminBranchManager: React.FC<AdminBranchManagerProps> = ({
     urlParams.set('branch', branch.branchCode);
     if (branch.name) urlParams.set('bname', branch.name);
     if (branch.expiryDate) urlParams.set('exp', branch.expiryDate);
+    if (branch.username) urlParams.set('u', branch.username);
+    if (branch.password) {
+      try {
+        urlParams.set('p', btoa(encodeURIComponent(branch.password)));
+      } catch {
+        urlParams.set('p', branch.password);
+      }
+    }
     const linkToCopy = `${currentOrigin}?${urlParams.toString()}`;
     navigator.clipboard.writeText(linkToCopy);
     setCopiedId(branch.id);

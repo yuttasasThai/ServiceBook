@@ -18,6 +18,8 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (session: AuthSession) => void;
+  branchCode?: string;
+  isBranchLocked?: boolean;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
@@ -25,9 +27,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
   onClose,
   onLoginSuccess,
+  branchCode,
+  isBranchLocked = false,
 }) => {
-  const [loginMode, setLoginMode] = useState<'branch' | 'admin'>('branch');
-  const [username, setUsername] = useState('');
+  const [loginMode, setLoginMode] = useState<'branch' | 'admin'>(isBranchLocked ? 'branch' : 'branch');
+  const matchedBranch = branchCode
+    ? branches.find((b) => b.branchCode.toUpperCase() === branchCode.toUpperCase())
+    : null;
+
+  const [username, setUsername] = useState(matchedBranch?.username || '');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [expiredBranchWarning, setExpiredBranchWarning] = useState<string | null>(null);
@@ -39,7 +47,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setErrorMessage('');
     setExpiredBranchWarning(null);
 
-    if (loginMode === 'admin') {
+    if (loginMode === 'admin' && !isBranchLocked) {
       // Admin login (accepts admin / admin1234 or empty in local demo)
       if (
         (username.trim().toLowerCase() === 'admin' && password.trim() === 'admin1234') ||
@@ -61,7 +69,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     // Branch User login
     const foundBranch = branches.find(
       (b) =>
-        b.username.toLowerCase() === username.trim().toLowerCase() &&
+        (b.username.toLowerCase() === username.trim().toLowerCase() ||
+          b.branchCode.toLowerCase() === username.trim().toLowerCase()) &&
         b.password === password.trim()
     );
 
@@ -84,6 +93,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       isLoggedIn: true,
       role: 'branch_user',
       branchId: foundBranch.id,
+      branchCode: foundBranch.branchCode,
       branchName: foundBranch.name,
       username: foundBranch.username,
       expiresAt: foundBranch.expiryDate,
@@ -98,7 +108,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         <div className="bg-slate-900 px-6 py-5 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <KeyRound className="w-5 h-5 text-amber-400" />
-            <h3 className="text-lg font-bold">เข้าสู่ระบบคัมภีร์ยุทธซ่างซวดลวดFix it</h3>
+            <h3 className="text-lg font-bold">
+              {isBranchLocked ? `เข้าสู่ระบบสาขา (${branchCode || 'User'})` : 'เข้าสู่ระบบคัมภีร์ยุทธซ่างซวดลวดFix it'}
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -108,39 +120,46 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </button>
         </div>
 
-        {/* Tab switch */}
-        <div className="grid grid-cols-2 p-2 bg-slate-100 border-b border-slate-200 text-xs font-bold">
-          <button
-            type="button"
-            onClick={() => {
-              setLoginMode('branch');
-              setErrorMessage('');
-              setExpiredBranchWarning(null);
-            }}
-            className={`py-2 rounded-xl transition ${
-              loginMode === 'branch'
-                ? 'bg-white text-indigo-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            เข้าใช้งานสำหรับสาขา (User)
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setLoginMode('admin');
-              setErrorMessage('');
-              setExpiredBranchWarning(null);
-            }}
-            className={`py-2 rounded-xl transition ${
-              loginMode === 'admin'
-                ? 'bg-white text-amber-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            ผู้ดูแลระบบ (Admin)
-          </button>
-        </div>
+        {/* Tab switch - Only show Admin tab if NOT locked to branch */}
+        {!isBranchLocked ? (
+          <div className="grid grid-cols-2 p-2 bg-slate-100 border-b border-slate-200 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode('branch');
+                setErrorMessage('');
+                setExpiredBranchWarning(null);
+              }}
+              className={`py-2 rounded-xl transition ${
+                loginMode === 'branch'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              เข้าใช้งานสำหรับสาขา (User)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode('admin');
+                setErrorMessage('');
+                setExpiredBranchWarning(null);
+              }}
+              className={`py-2 rounded-xl transition ${
+                loginMode === 'admin'
+                  ? 'bg-white text-amber-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              ผู้ดูแลระบบ (Admin)
+            </button>
+          </div>
+        ) : (
+          <div className="px-6 py-2.5 bg-amber-500/15 border-b border-amber-300 text-xs font-bold text-amber-900 flex items-center gap-2">
+            <Building className="w-4 h-4 text-amber-700" />
+            <span>เข้าสู่ระบบเฉพาะลิงก์สาขา: {matchedBranch?.name || branchCode}</span>
+          </div>
+        )}
 
         {/* Form Body */}
         <form onSubmit={handleLoginSubmit} className="p-6 space-y-4">
