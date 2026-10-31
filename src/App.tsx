@@ -8,6 +8,7 @@ import {
   QuickPinpointRecord,
   DisassemblyGuide,
   BranchCustomProfile,
+  GlobalThemeSettings,
 } from './types';
 import { APP_VERSION } from './constants/version';
 import {
@@ -36,6 +37,8 @@ import {
   resetToFactoryDefaults,
   getActiveShopProfile,
   saveBranchCustomProfile,
+  getGlobalThemeSettings,
+  saveGlobalThemeSettings,
 } from './utils/storage';
 import { HeaderBanner } from './components/HeaderBanner';
 import { Navigation, ActiveTab } from './components/Navigation';
@@ -52,6 +55,8 @@ import { RevisionModal } from './components/RevisionModal';
 import { ResetConfirmModal } from './components/ResetConfirmModal';
 import { BranchSettingsModal } from './components/BranchSettingsModal';
 import { BranchLoginCard } from './components/BranchLoginCard';
+import { CircuitWatermark } from './components/CircuitWatermark';
+import { AdminGlobalCustomizer } from './components/AdminGlobalCustomizer';
 import {
   Sparkles,
   GitBranch,
@@ -88,7 +93,11 @@ export default function App() {
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isBranchSettingsModalOpen, setIsBranchSettingsModalOpen] = useState(false);
+  const [isThemeCustomizerOpen, setIsThemeCustomizerOpen] = useState(false);
   const [isRecentlyLoggedOut, setIsRecentlyLoggedOut] = useState(false);
+
+  // Global Theme & Typography (Syncs to all branch links in real-time)
+  const [globalTheme, setGlobalTheme] = useState<GlobalThemeSettings>(getGlobalThemeSettings());
 
   // Derive categories list dynamically
   const categories = getCategories(repairs);
@@ -100,11 +109,12 @@ export default function App() {
       const tabParam = params.get('tab') as ActiveTab | null;
       const sheetParam = params.get('sheet');
 
-      // Refresh session, profile, and branches from storage
+      // Refresh session, profile, branches, and theme from storage
       const freshSession = getAuthSession();
       setSession(freshSession);
       setProfile(getActiveShopProfile(freshSession));
       setBranches(getBranchUsers());
+      setGlobalTheme(getGlobalThemeSettings());
 
       if (freshSession.role === 'branch_user' && freshSession.expiresAt) {
         const expiry = checkBranchExpiry(freshSession.expiresAt);
@@ -130,7 +140,31 @@ export default function App() {
     } catch (e) {
       console.error('URL params parsing error', e);
     }
+
+    // Real-time listener: เมื่อแอดมินแก้ไขธีมในแท็บอื่น หรือในระบบ ลิงก์สาขาจะอัปเดตทันที
+    const handleThemeSync = (e: any) => {
+      if (e?.detail) {
+        setGlobalTheme(e.detail);
+      } else {
+        setGlobalTheme(getGlobalThemeSettings());
+      }
+    };
+
+    window.addEventListener('fixit_theme_updated', handleThemeSync);
+    window.addEventListener('storage', handleThemeSync);
+
+    return () => {
+      window.removeEventListener('fixit_theme_updated', handleThemeSync);
+      window.removeEventListener('storage', handleThemeSync);
+    };
   }, []);
+
+  // Handler for Admin Global Theme Customization
+  const handleSaveGlobalTheme = (newTheme: GlobalThemeSettings) => {
+    setGlobalTheme(newTheme);
+    saveGlobalThemeSettings(newTheme);
+  };
+
 
   // Handlers for Quick Pinpoints
   const handleSavePinpoint = (entry: QuickPinpointRecord) => {
@@ -335,19 +369,26 @@ export default function App() {
     : false;
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col text-slate-800 font-sans selection:bg-amber-400 selection:text-slate-950">
-      {/* 1. Header Banner (ฉากหลังม้วนคัมภีร์ลายวงจรอิเล็กทรอนิกส์, ข้อความ "คัมภีร์ลับซ่างซวดลวด", ชื่อร้าน/เบอร์ ด้านใต้) */}
-      <HeaderBanner
-        profile={profile}
-        session={session}
-        activeRevision={activeRevision}
-        onOpenSettings={() => setIsSettingsModalOpen(true)}
-        onOpenLoginModal={() => setIsLoginModalOpen(true)}
-        onLogout={handleLogout}
-        onOpenRevisionModal={() => setIsRevisionModalOpen(true)}
-        onOpenResetModal={() => setIsResetModalOpen(true)}
-        onOpenBranchSettings={() => setIsBranchSettingsModalOpen(true)}
-      />
+    <div
+      className={`min-h-screen flex flex-col font-theme-${globalTheme.fontFamily} theme-${globalTheme.bgTone} ${
+        globalTheme.fontScale === 'sm' ? 'text-xs' : globalTheme.fontScale === 'lg' ? 'text-base' : 'text-sm'
+      } relative selection:bg-amber-400 selection:text-slate-950 transition-colors duration-200`}
+    >
+      {/* ลายน้ำสัญลักษณ์ทางไฟฟ้าและอิเล็กทรอนิกส์ บางเบาไม่บดบังข้อความ ปรากฏทุกหน้า */}
+      <CircuitWatermark theme={globalTheme} />
+
+      {/* 1. Header Banner แสดงเฉพาะส่วนของหน้าหลัก (Home) เท่านั้น หน้าอื่นๆ ไม่ต้องมีภาพหน้าปก เพื่อลดพื้นที่ลง */}
+      {activeTab === 'home' && (
+        <HeaderBanner
+          profile={profile}
+          session={session}
+          activeRevision={activeRevision}
+          theme={globalTheme}
+          onOpenLoginModal={() => setIsLoginModalOpen(true)}
+          onLogout={handleLogout}
+          onOpenRevisionModal={() => setIsRevisionModalOpen(true)}
+        />
+      )}
 
       {/* 2. Top Navigation Bar */}
       <Navigation
@@ -365,6 +406,7 @@ export default function App() {
         branchCount={branches.length}
         session={session}
         onOpenBranchSettings={() => setIsBranchSettingsModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* 3. Main Content Container */}
@@ -565,6 +607,9 @@ export default function App() {
                 profile={profile}
                 onSaveProfile={handleSaveProfile}
                 isStandaloneTab={true}
+                isAdmin={session.role === 'admin'}
+                onOpenResetModal={() => setIsResetModalOpen(true)}
+                onOpenThemeCustomizer={() => setIsThemeCustomizerOpen(true)}
               />
             )}
           </>
@@ -577,6 +622,9 @@ export default function App() {
         onSaveProfile={handleSaveProfile}
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+        isAdmin={session.role === 'admin'}
+        onOpenResetModal={() => setIsResetModalOpen(true)}
+        onOpenThemeCustomizer={() => setIsThemeCustomizerOpen(true)}
       />
 
       <LoginModal
@@ -617,6 +665,15 @@ export default function App() {
         currentProfile={profile}
         onSaveBranchProfile={handleSaveBranchProfile}
       />
+
+      {/* โมดอลปรับแต่งระบบส่วนกลาง & ซิงก์สาขา Real-time โดย Admin */}
+      <AdminGlobalCustomizer
+        isOpen={isThemeCustomizerOpen}
+        onClose={() => setIsThemeCustomizerOpen(false)}
+        currentTheme={globalTheme}
+        onSaveTheme={handleSaveGlobalTheme}
+      />
+
 
       {/* Footer */}
       <footer className="bg-slate-900 text-slate-400 text-xs py-5 mt-10 border-t border-slate-800 no-print">
