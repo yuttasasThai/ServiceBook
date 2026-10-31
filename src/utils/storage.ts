@@ -6,6 +6,7 @@ import {
   AuthSession,
   QuickPinpointRecord,
   DisassemblyGuide,
+  BranchCustomProfile,
 } from '../types';
 import {
   DEFAULT_SHOP_PROFILE,
@@ -215,9 +216,20 @@ export function getAuthSession(): AuthSession {
         const bCode = branchParam.trim();
         const bNameParam = urlParams.get('bname') || urlParams.get('name');
         const expParam = urlParams.get('exp');
+        const uParam = urlParams.get('u');
+        const pParam = urlParams.get('p');
+
+        let decodedPassword = '';
+        if (pParam) {
+          try {
+            decodedPassword = decodeURIComponent(atob(pParam));
+          } catch {
+            decodedPassword = pParam;
+          }
+        }
 
         const allBranches = getBranchUsers();
-        const found = allBranches.find(
+        let found = allBranches.find(
           (b) => b.branchCode.toUpperCase() === bCode.toUpperCase()
         );
 
@@ -235,23 +247,50 @@ export function getAuthSession(): AuthSession {
             phone: '',
             branchCode: bCode,
             shareUrl: `?branch=${encodeURIComponent(bCode)}`,
-            username: `user_${bCode.toLowerCase()}`,
-            password: '',
+            username: uParam || `user_${bCode.toLowerCase()}`,
+            password: decodedPassword || 'password123',
             expiryDate: finalExpiry,
             isActive: true,
             createdAt: new Date().toISOString().split('T')[0],
             notes: 'บันทึกอัตโนมัติจากลิงก์สาขา',
           };
+          found = autoBranch;
           saveBranchUsers([...allBranches, autoBranch]);
+        } else if (decodedPassword && found.password !== decodedPassword) {
+          // Sync password if updated in URL
+          const updated = allBranches.map((b) =>
+            b.id === found!.id ? { ...b, password: decodedPassword } : b
+          );
+          saveBranchUsers(updated);
+          found.password = decodedPassword;
+        }
+
+        // Check if there is already an existing ACTIVE logged-in session for this branch in localStorage
+        let isAlreadyLoggedIn = false;
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.SESSION);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (
+              parsed.role === 'branch_user' &&
+              parsed.branchCode &&
+              parsed.branchCode.toUpperCase() === bCode.toUpperCase() &&
+              parsed.isLoggedIn === true
+            ) {
+              isAlreadyLoggedIn = true;
+            }
+          }
+        } catch (e) {
+          console.warn('Error reading stored session', e);
         }
 
         const branchSession: AuthSession = {
-          isLoggedIn: true,
+          isLoggedIn: isAlreadyLoggedIn,
           role: 'branch_user',
-          branchId: found?.id || `branch-${bCode.toLowerCase()}`,
+          branchId: found.id,
           branchCode: bCode,
           branchName: finalName,
-          username: found?.username || bCode.toLowerCase(),
+          username: found.username || `user_${bCode.toLowerCase()}`,
           expiresAt: finalExpiry,
         };
 
@@ -420,5 +459,100 @@ export function deleteDisassemblyGuide(id: string): DisassemblyGuide[] {
   const updated = existing.filter((g) => g.id !== id);
   saveDisassemblyGuides(updated);
   return updated;
+}
+
+// ==========================================
+// ล้างงานเก่า & คืนค่าเริ่มต้น (Data Reset)
+// ==========================================
+
+/**
+ * เคลียร์งานเก่าทั้งหมดออก เพื่อให้ผู้ใช้เริ่มบันทึกงานใหม่ได้แบบว่างเปล่า 0 รายการ
+ * โดยไม่ลบการตั้งค่าร้านและสาขา
+ */
+export function clearAllWorkData(): {
+  repairs: RepairEntry[];
+  pinpoints: QuickPinpointRecord[];
+  guides: DisassemblyGuide[];
+} {
+  saveRepairs([]);
+  saveQuickPinpoints([]);
+  saveDisassemblyGuides([]);
+  return {
+    repairs: [],
+    pinpoints: [],
+    guides: [],
+  };
+}
+
+/**
+ * คืนค่าเริ่มต้นทั้งหมดจากโรงงาน (Reset to Factory Defaults)
+ * กู้คืนข้อมูลตัวอย่างทั้งหมดกลับมาเป็นค่าเริ่มต้น
+ */
+export function resetToFactoryDefaults(): {
+  profile: ShopProfile;
+  repairs: RepairEntry[];
+  pinpoints: QuickPinpointRecord[];
+  guides: DisassemblyGuide[];
+  branches: BranchUser[];
+} {
+  saveShopProfile(DEFAULT_SHOP_PROFILE);
+  saveRepairs(INITIAL_REPAIRS);
+  saveQuickPinpoints(INITIAL_QUICK_PINPOINTS);
+  saveDisassemblyGuides(INITIAL_DISASSEMBLY_GUIDES);
+  saveBranchUsers(INITIAL_BRANCH_USERS);
+
+  return {
+    profile: DEFAULT_SHOP_PROFILE,
+    repairs: INITIAL_REPAIRS,
+    pinpoints: INITIAL_QUICK_PINPOINTS,
+    guides: INITIAL_DISASSEMBLY_GUIDES,
+    branches: INITIAL_BRANCH_USERS,
+  };
+}
+
+// ==========================================
+// ข้อมูลโปรไฟล์เฉพาะสาขา (Branch Customization)
+// ==========================================
+
+export function getBranchCustomProfile(branchCode: string): BranchCustomProfile | null {
+  if (!branchCode) return null;
+  try {
+    const raw = localStorage.getItem(`fixit_branch_custom_${branchCode}`);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.error('Failed to read branch custom profile', err);
+  }
+  return null;
+}
+
+export function saveBranchCustomProfile(profile: BranchCustomProfile): void {
+  if (!profile.branchCode) return;
+  try {
+    localStorage.setItem(`fixit_branch_custom_${profile.branchCode}`, JSON.stringify(profile));
+  } catch (err) {
+    console.error('Failed to save branch custom profile', err);
+  }
+}
+
+/**
+ * รวมโปรไฟล์หลักกับโปรไฟล์เฉพาะสาขา (ถ้ามี)
+ */
+export function getActiveShopProfile(session?: AuthSession): ShopProfile {
+  const baseProfile = getShopProfile();
+  if (session && session.role === 'branch_user' && session.branchCode) {
+    const branchCustom = getBranchCustomProfile(session.branchCode);
+    if (branchCustom) {
+      return {
+        ...baseProfile,
+        shopName: branchCustom.shopName || baseProfile.shopName,
+        technicianName: branchCustom.technicianName || baseProfile.technicianName,
+        phone: branchCustom.phone || baseProfile.phone,
+        lineId: branchCustom.lineId || baseProfile.lineId,
+        address: branchCustom.address || baseProfile.address,
+        coverImage: branchCustom.coverImage || baseProfile.coverImage,
+      };
+    }
+  }
+  return baseProfile;
 }
 
