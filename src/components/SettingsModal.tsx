@@ -16,7 +16,11 @@ import {
   Wrench,
   X,
   Image as ImageIcon,
+  Download,
+  ShieldCheck,
+  Palette,
 } from 'lucide-react';
+import { downloadSourceZip } from '../utils/exportSourceZip';
 
 interface SettingsModalProps {
   profile: ShopProfile;
@@ -24,6 +28,9 @@ interface SettingsModalProps {
   isOpen?: boolean;
   onClose?: () => void;
   isStandaloneTab?: boolean;
+  isAdmin?: boolean;
+  onOpenResetModal?: () => void;
+  onOpenThemeCustomizer?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -32,7 +39,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen = true,
   onClose,
   isStandaloneTab = false,
+  isAdmin = false,
+  onOpenResetModal,
+  onOpenThemeCustomizer,
 }) => {
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+
   const [shopName, setShopName] = useState(profile.shopName);
   const [technicianName, setTechnicianName] = useState(profile.technicianName);
   const [phone, setPhone] = useState(profile.phone);
@@ -92,6 +104,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  const handleDownloadZip = () => {
+    const res = downloadSourceZip('khamphi-suadluad-source.zip');
+    if (res.success) {
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3000);
+    }
+  };
+
   const content = (
     <div className="space-y-6">
       {/* Title */}
@@ -100,11 +120,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="flex items-center gap-2">
             <Settings className="w-5 h-5 text-amber-500" />
             <h2 className="text-xl font-bold text-slate-900">
-              ตั้งค่าโปรไฟล์ร้าน & เปลี่ยนรูปภาพหน้าปก
+              ตั้งค่าโปรไฟล์ร้าน & จัดการระบบ
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            ส่วนที่ 1: แก้ไขชื่อโปรฟาย, เบอร์โทรศัพท์, ไลน์ และเปลี่ยนรูปภาพหน้าร้าน/หน้าปก
+            แก้ไขชื่อร้าน, เบอร์โทรศัพท์, LINE, รูปหน้าปก และเครื่องมือระบบเฉพาะ Admin
           </p>
         </div>
 
@@ -122,6 +142,75 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="bg-emerald-50 border border-emerald-200 px-4 py-2.5 rounded-xl text-emerald-800 text-xs sm:text-sm font-semibold flex items-center gap-2">
           <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
           <span>บันทึกการตั้งค่าร้านและรูปหน้าปกเรียบร้อยแล้ว!</span>
+        </div>
+      )}
+
+      {/* เครื่องมือพิเศษสำหรับ Admin: โหลด Source Code ZIP, เคลียร์งาน/รีเซ็ต, และปรับแต่งระบบ */}
+      {isAdmin && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-900/5 to-amber-500/10 border border-amber-500/40 space-y-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0" />
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <span>จัดการระบบ & เครื่องมือส่วนกลาง (ย้ายมาจากหน้าปก)</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black">
+                  Admin Only
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500">
+                ดาวน์โหลดไฟล์ซอร์สโค้ดโปรแกรม, เคลียร์ข้อมูลงานเก่า/คืนค่าโรงงาน, และปรับแต่งฟอนต์/พื้นหลัง
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+            {/* 1. ดาวน์โหลด Source Code .ZIP */}
+            <button
+              type="button"
+              onClick={handleDownloadZip}
+              className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-bold transition shadow-xs cursor-pointer ${
+                downloadSuccess
+                  ? 'bg-emerald-600 text-white border-emerald-700'
+                  : 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-600'
+              }`}
+            >
+              {downloadSuccess ? (
+                <>
+                  <Check className="w-4 h-4 text-white" />
+                  <span>โหลด .ZIP สำเร็จ!</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 text-slate-950" />
+                  <span>โหลด Source (.ZIP)</span>
+                </>
+              )}
+            </button>
+
+            {/* 2. ปรับแต่งระบบส่วนกลาง (ฟอนต์, พื้นหลัง, การจัดเรียง) */}
+            {onOpenThemeCustomizer && (
+              <button
+                type="button"
+                onClick={onOpenThemeCustomizer}
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/50 text-xs font-bold transition shadow-xs cursor-pointer"
+              >
+                <Palette className="w-4 h-4 text-amber-400" />
+                <span>ปรับแต่งระบบ (ฟอนต์/พื้นหลัง)</span>
+              </button>
+            )}
+
+            {/* 3. รีเซ็ต / เคลียร์งานเก่า */}
+            {onOpenResetModal && (
+              <button
+                type="button"
+                onClick={onOpenResetModal}
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 text-slate-700 border border-slate-300 text-xs font-bold transition cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4 text-slate-500" />
+                <span>เคลียร์งานเก่า / รีเซ็ต</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
 
