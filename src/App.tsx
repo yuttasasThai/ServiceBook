@@ -55,8 +55,7 @@ import { RevisionModal } from './components/RevisionModal';
 import { ResetConfirmModal } from './components/ResetConfirmModal';
 import { BranchSettingsModal } from './components/BranchSettingsModal';
 import { BranchLoginCard } from './components/BranchLoginCard';
-import { CircuitWatermark } from './components/CircuitWatermark';
-import { AdminGlobalCustomizer } from './components/AdminGlobalCustomizer';
+import { DEFAULT_GLOBAL_THEME } from './data/defaultData';
 import {
   Sparkles,
   GitBranch,
@@ -66,7 +65,510 @@ import {
   MessageCircle,
   KeyRound,
   Clock,
+  Palette,
+  Type,
+  Layout,
+  Sliders,
+  Check,
+  RotateCcw,
+  Zap,
+  ShieldCheck,
+  Layers,
+  X,
 } from 'lucide-react';
+
+/* =========================================================================
+   1. ลายน้ำสัญลักษณ์ทางไฟฟ้าและอิเล็กทรอนิกส์ (CircuitWatermark)
+   รวมไว้ในไฟล์หลักเพื่อป้องกัน Error: [UNRESOLVED_IMPORT] บน Vercel
+   ========================================================================= */
+const CircuitWatermark: React.FC<{ theme: GlobalThemeSettings }> = ({ theme }) => {
+  if (!theme.showCircuitWatermark) return null;
+
+  const opacity = Math.min(Math.max(theme.watermarkOpacity ?? 0.05, 0.02), 0.15);
+  const isLightTone = theme.bgTone === 'clean-light';
+  const strokeColor = isLightTone ? '#0f172a' : '#38bdf8';
+  const goldStroke = isLightTone ? '#b45309' : '#fbbf24';
+
+  return (
+    <div
+      aria-hidden="true"
+      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
+      style={{ opacity }}
+    >
+      <svg
+        className="w-full h-full"
+        xmlns="http://www.w3.org/2000/svg"
+        width="100%"
+        height="100%"
+      >
+        <defs>
+          <pattern
+            id="electronic-schematic-watermark"
+            width={theme.watermarkDensity === 'dense' ? '300' : theme.watermarkDensity === 'subtle' ? '500' : '380'}
+            height={theme.watermarkDensity === 'dense' ? '300' : theme.watermarkDensity === 'subtle' ? '500' : '380'}
+            patternUnits="userSpaceOnUse"
+          >
+            {/* 1. ตัวต้านทาน (Resistor /\/\/\) */}
+            <g transform="translate(20, 30)">
+              <line x1="0" y1="15" x2="15" y2="15" stroke={strokeColor} strokeWidth="1.2" strokeLinecap="round" />
+              <polyline
+                points="15,15 19,5 27,25 35,5 43,25 51,5 59,25 63,15"
+                fill="none"
+                stroke={strokeColor}
+                strokeWidth="1.2"
+                strokeLinejoin="round"
+              />
+              <line x1="63" y1="15" x2="78" y2="15" stroke={strokeColor} strokeWidth="1.2" strokeLinecap="round" />
+              <text x="32" y="38" fill={strokeColor} fontSize="8" fontFamily="monospace" textAnchor="middle">
+                R 10kΩ
+              </text>
+            </g>
+
+            {/* 2. คาปาซิเตอร์ / ตัวเก็บประจุ (Capacitor --||--) */}
+            <g transform="translate(140, 25)">
+              <line x1="0" y1="20" x2="18" y2="20" stroke={strokeColor} strokeWidth="1.2" />
+              <line x1="18" y1="8" x2="18" y2="32" stroke={strokeColor} strokeWidth="1.4" strokeLinecap="round" />
+              <line x1="24" y1="8" x2="24" y2="32" stroke={strokeColor} strokeWidth="1.4" strokeLinecap="round" />
+              <line x1="24" y1="20" x2="42" y2="20" stroke={strokeColor} strokeWidth="1.2" />
+              <text x="21" y="42" fill={strokeColor} fontSize="8" fontFamily="monospace" textAnchor="middle">
+                C 100μF
+              </text>
+            </g>
+
+            {/* 3. กราวด์ไฟฟ้า (Earth Ground ⏚) */}
+            <g transform="translate(240, 30)">
+              <line x1="20" y1="0" x2="20" y2="16" stroke={strokeColor} strokeWidth="1.2" />
+              <line x1="8" y1="16" x2="32" y2="16" stroke={strokeColor} strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="12" y1="21" x2="28" y2="21" stroke={strokeColor} strokeWidth="1.3" strokeLinecap="round" />
+              <line x1="16" y1="26" x2="24" y2="26" stroke={strokeColor} strokeWidth="1.1" strokeLinecap="round" />
+              <text x="20" y="36" fill={strokeColor} fontSize="7" fontFamily="monospace" textAnchor="middle">
+                GND
+              </text>
+            </g>
+
+            {/* 4. ไดโอด (Diode -|>|-) และ LED */}
+            <g transform="translate(310, 25)">
+              <line x1="0" y1="18" x2="16" y2="18" stroke={goldStroke} strokeWidth="1.2" />
+              <polygon points="16,8 30,18 16,28" fill="none" stroke={goldStroke} strokeWidth="1.2" strokeLinejoin="round" />
+              <line x1="30" y1="8" x2="30" y2="28" stroke={goldStroke} strokeWidth="1.4" strokeLinecap="round" />
+              <line x1="30" y1="18" x2="46" y2="18" stroke={goldStroke} strokeWidth="1.2" />
+              <text x="23" y="38" fill={goldStroke} fontSize="7" fontFamily="monospace" textAnchor="middle">
+                LED
+              </text>
+            </g>
+
+            {/* 5. ทรานซิสเตอร์ (NPN Transistor) */}
+            <g transform="translate(40, 120)">
+              <line x1="0" y1="20" x2="16" y2="20" stroke={strokeColor} strokeWidth="1.2" />
+              <line x1="16" y1="8" x2="16" y2="32" stroke={strokeColor} strokeWidth="1.8" strokeLinecap="round" />
+              <line x1="16" y1="12" x2="32" y2="4" stroke={strokeColor} strokeWidth="1.2" />
+              <line x1="16" y1="28" x2="32" y2="36" stroke={strokeColor} strokeWidth="1.2" />
+              <circle cx="22" cy="20" r="18" fill="none" stroke={strokeColor} strokeWidth="0.8" strokeDasharray="3,3" />
+              <text x="22" y="49" fill={strokeColor} fontSize="7" fontFamily="monospace" textAnchor="middle">
+                NPN Q1
+              </text>
+            </g>
+
+            {/* 6. ขดลวดเหนี่ยวนำ (Inductor L) */}
+            <g transform="translate(160, 120)">
+              <line x1="0" y1="15" x2="10" y2="15" stroke={goldStroke} strokeWidth="1.2" />
+              <path
+                d="M 10 15 A 6 6 0 0 1 22 15 A 6 6 0 0 1 34 15 A 6 6 0 0 1 46 15 A 6 6 0 0 1 58 15"
+                fill="none"
+                stroke={goldStroke}
+                strokeWidth="1.2"
+              />
+              <line x1="58" y1="15" x2="68" y2="15" stroke={goldStroke} strokeWidth="1.2" />
+              <text x="34" y="27" fill={goldStroke} fontSize="7" fontFamily="monospace" textAnchor="middle">
+                L 220μH
+              </text>
+            </g>
+
+            {/* 7. สัญลักษณ์หน่วยช่าง: โอห์ม (Ω) และแหล่งจ่ายไฟ */}
+            <g transform="translate(280, 115)">
+              <circle cx="20" cy="20" r="14" fill="none" stroke={strokeColor} strokeWidth="1.2" />
+              <path
+                d="M 13 20 Q 16.5 13 20 20 T 27 20"
+                fill="none"
+                stroke={strokeColor}
+                strokeWidth="1.2"
+                strokeLinecap="round"
+              />
+              <text x="20" y="49" fill={strokeColor} fontSize="7" fontFamily="monospace" textAnchor="middle">
+                220VAC ~
+              </text>
+            </g>
+
+            {/* 8. ลายวงจร PCB Traces & Vias */}
+            <g transform="translate(260, 215)">
+              <path
+                d="M 10 35 L 35 35 L 55 15 L 85 15"
+                fill="none"
+                stroke={strokeColor}
+                strokeWidth="1.1"
+                strokeLinecap="round"
+              />
+              <circle cx="10" cy="35" r="3" fill="none" stroke={strokeColor} strokeWidth="1" />
+              <circle cx="85" cy="15" r="3" fill="none" stroke={strokeColor} strokeWidth="1" />
+            </g>
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#electronic-schematic-watermark)" />
+      </svg>
+    </div>
+  );
+};
+
+/* =========================================================================
+   2. แผงควบคุมปรับแต่งระบบส่วนกลาง (AdminGlobalCustomizer)
+   รวมไว้ในไฟล์หลักเพื่อป้องกัน Error: [UNRESOLVED_IMPORT] บน Vercel
+   ========================================================================= */
+interface AdminGlobalCustomizerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentTheme: GlobalThemeSettings;
+  onSaveTheme: (theme: GlobalThemeSettings) => void;
+}
+
+const AdminGlobalCustomizer: React.FC<AdminGlobalCustomizerProps> = ({
+  isOpen,
+  onClose,
+  currentTheme,
+  onSaveTheme,
+}) => {
+  const [theme, setTheme] = useState<GlobalThemeSettings>({ ...currentTheme });
+  const [activeSubTab, setActiveSubTab] = useState<'typography' | 'layout' | 'background'>('typography');
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSave = () => {
+    onSaveTheme(theme);
+    setSaveSuccess(true);
+    setTimeout(() => {
+      setSaveSuccess(false);
+      onClose();
+    }, 1200);
+  };
+
+  const handleResetDefaults = () => {
+    if (window.confirm('คุณต้องการคืนค่าการปรับแต่งระบบ (ฟอนต์, พื้นหลัง, การจัดเรียง) กลับเป็นค่าเริ่มต้นหรือไม่?\n\n*หมายเหตุ: ข้อมูลสาขาและงานซ่อมจะไม่ถูกลบ*')) {
+      setTheme({ ...DEFAULT_GLOBAL_THEME });
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-3xl bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/40 border-b border-amber-500/30">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+              <Palette className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <span>ปรับแต่งระบบส่วนกลาง & ซิงก์สาขา Real-time</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
+                  Admin Only
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400">
+                ปรับฟอนต์, การจัดเรียงข้อความ, และพื้นหลัง ลิงก์สาขาจะเปลี่ยนตามทันที
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Reassurance Banner */}
+        <div className="px-5 py-2.5 bg-amber-500/10 border-b border-amber-500/20 flex items-start gap-2.5 text-xs text-amber-200/90">
+          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <div>
+            <strong>รับประกันการแยกข้อมูลสาขา 100%:</strong> การปรับแต่งนี้จะซิงก์ความสวยงามไปยังทุกลิงก์สาขา โดยที่<strong>ภาพหน้าปกสาขา, ชื่อร้านสาขา, เบอร์โทร, LINE และข้อมูลงานซ่อมจะไม่ถูกทับเด็ดขาด</strong>
+          </div>
+        </div>
+
+        {/* Sub Tabs */}
+        <div className="flex border-b border-slate-800 bg-slate-950/60 px-5 pt-2 gap-2 text-xs font-semibold">
+          <button
+            onClick={() => setActiveSubTab('typography')}
+            className={`pb-2.5 px-3 border-b-2 transition flex items-center gap-1.5 cursor-pointer ${
+              activeSubTab === 'typography'
+                ? 'border-amber-400 text-amber-300'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Type className="w-3.5 h-3.5" />
+            <span>1) ตัวหนังสือ & ข้อความหัวข้อ</span>
+          </button>
+          <button
+            onClick={() => setActiveSubTab('layout')}
+            className={`pb-2.5 px-3 border-b-2 transition flex items-center gap-1.5 cursor-pointer ${
+              activeSubTab === 'layout'
+                ? 'border-amber-400 text-amber-300'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Layout className="w-3.5 h-3.5" />
+            <span>2) จัดเรียงหน้าปก</span>
+          </button>
+          <button
+            onClick={() => setActiveSubTab('background')}
+            className={`pb-2.5 px-3 border-b-2 transition flex items-center gap-1.5 cursor-pointer ${
+              activeSubTab === 'background'
+                ? 'border-amber-400 text-amber-300'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>3) โทนพื้นหลัง & ลายน้ำ</span>
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-5 overflow-y-auto space-y-4 flex-1 scroll-container text-xs sm:text-sm">
+          {activeSubTab === 'typography' && (
+            <div className="space-y-3.5">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1 text-xs">
+                  หัวข้อหลักหน้าปก (Brand Title)
+                </label>
+                <input
+                  type="text"
+                  value={theme.brandTitle}
+                  onChange={(e) => setTheme({ ...theme, brandTitle: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 focus:border-amber-400 text-white font-bold text-sm outline-none transition"
+                  placeholder="เช่น คัมภีร์ลับช่างซวดลวด"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1 text-xs">
+                    ป้ายกำกับด้านขวา (Badge Tagline)
+                  </label>
+                  <input
+                    type="text"
+                    value={theme.taglineBadge}
+                    onChange={(e) => setTheme({ ...theme, taglineBadge: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 focus:border-amber-400 text-white font-semibold text-xs outline-none transition"
+                    placeholder="เช่น Fix it Pro"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1 text-xs">
+                    ความหนาตัวหนังสือหัวข้อ
+                  </label>
+                  <select
+                    value={theme.headerFontWeight}
+                    onChange={(e) => setTheme({ ...theme, headerFontWeight: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 focus:border-amber-400 text-white text-xs outline-none transition"
+                  >
+                    <option value="normal">ปกติ (Normal)</option>
+                    <option value="bold">หนา (Bold)</option>
+                    <option value="black">หนาพิเศษ (Black)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1 text-xs">
+                  คำโปรยสโลแกน (Subtitle)
+                </label>
+                <input
+                  type="text"
+                  value={theme.brandSubtitle}
+                  onChange={(e) => setTheme({ ...theme, brandSubtitle: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 focus:border-amber-400 text-slate-200 text-xs outline-none transition"
+                  placeholder="เช่น ศูนย์รวมเทคนิคชี้จุดเสีย • วิธีถอดประกอบ • คลังวงจรและคัมภีร์งานซ่อม"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2 text-xs">
+                  เลือกแบบฟอนต์ตัวหนังสือทั้งระบบ (Font Family)
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'prompt', name: 'Prompt (พร้อมต์)', desc: 'โมเดิร์น ทันสมัย อ่านง่าย' },
+                    { id: 'kanit', name: 'Kanit (คณิต)', desc: 'ตัวหนา คมชัด สไตล์ช่าง' },
+                    { id: 'sarabun', name: 'Sarabun (สารบรรณ)', desc: 'เรียบร้อย เป็นทางการ' },
+                    { id: 'chakra', name: 'Chakra Petch', desc: 'ดิจิทัล ลายเส้นไฮเทค' },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setTheme({ ...theme, fontFamily: f.id as any })}
+                      className={`p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                        theme.fontFamily === f.id
+                          ? 'bg-amber-500/20 border-amber-400 text-white'
+                          : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-amber-300 text-xs">{f.name}</span>
+                        {theme.fontFamily === f.id && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                      </div>
+                      <p className="text-[10px] text-slate-400">{f.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeSubTab === 'layout' && (
+            <div className="space-y-3">
+              <label className="block text-slate-300 font-semibold text-xs">
+                เลือกรูปแบบการจัดเรียงข้อความหน้าปก
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {[
+                  { id: 'split', title: 'แบ่งส่วนสมดุล (Split)', desc: 'ชื่อระบบซ้าย + ข้อมูลร้านขวา เป็นสัดส่วน' },
+                  { id: 'centered', title: 'กึ่งกลางโปร (Centered)', desc: 'ชื่อระบบและข้อมูลร้านกึ่งกลาง' },
+                  { id: 'compact', title: 'มินิมอล (Compact)', desc: 'กะทัดรัด เตี้ย ประหยัดพื้นที่สูงสุด' },
+                ].map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => setTheme({ ...theme, bannerLayout: l.id as any })}
+                    className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                      theme.bannerLayout === l.id
+                        ? 'bg-amber-500/20 border-amber-400 text-white'
+                        : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-amber-300 text-xs">{l.title}</span>
+                      {theme.bannerLayout === l.id && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                    </div>
+                    <p className="text-[11px] text-slate-400">{l.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeSubTab === 'background' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2 text-xs">
+                  เลือกโทนสีพื้นหลังหลัก (Background Tone)
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'circuit-dark', name: 'คัมภีร์วงจรมืดทอง' },
+                    { id: 'slate-pro', name: 'เทาเข้มระดับวิศวกร' },
+                    { id: 'cyber-gold', name: 'คัมภีร์ทองอร่าม' },
+                    { id: 'electric-navy', name: 'น้ำเงินวงจรไฟฟ้า' },
+                  ].map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setTheme({ ...theme, bgTone: b.id as any })}
+                      className={`p-2.5 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
+                        theme.bgTone === b.id
+                          ? 'bg-amber-500/20 border-amber-400 text-white'
+                          : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs text-white">{b.name}</span>
+                      {theme.bgTone === b.id && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-cyan-400" />
+                    <span className="font-bold text-white text-xs">
+                      ลายน้ำสัญลักษณ์ทางไฟฟ้าและอิเล็กทรอนิกส์
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={theme.showCircuitWatermark}
+                      onChange={(e) => setTheme({ ...theme, showCircuitWatermark: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
+                  </label>
+                </div>
+
+                {theme.showCircuitWatermark && (
+                  <div className="pt-2 border-t border-slate-800">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-slate-300">
+                        ความเข้มลายน้ำ: <strong>{Math.round(theme.watermarkOpacity * 100)}%</strong>
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.02"
+                      max="0.12"
+                      step="0.01"
+                      value={theme.watermarkOpacity}
+                      onChange={(e) => setTheme({ ...theme, watermarkOpacity: parseFloat(e.target.value) })}
+                      className="w-full accent-cyan-400 cursor-pointer"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex items-center justify-between px-5 py-3 bg-slate-950 border-t border-slate-800">
+          <button
+            onClick={handleResetDefaults}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer"
+          >
+            <RotateCcw className="w-3 h-3 text-slate-400" />
+            <span>คืนค่าเริ่มต้น</span>
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold transition cursor-pointer"
+            >
+              ยกเลิก
+            </button>
+            <button
+              onClick={handleSave}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs font-bold transition shadow-md cursor-pointer"
+            >
+              {saveSuccess ? (
+                <>
+                  <Check className="w-4 h-4 text-slate-950" />
+                  <span>บันทึกแล้ว!</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>บันทึก & ซิงก์ทุกลิงก์สาขา</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 export default function App() {
   // Navigation & View State
