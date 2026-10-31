@@ -6,6 +6,9 @@ import {
   Users,
   Settings,
   Sparkles,
+  LogOut,
+  ShieldCheck,
+  UserCheck,
 } from 'lucide-react';
 import { AuthSession } from '../types';
 
@@ -20,6 +23,7 @@ interface NavigationProps {
   branchCount: number;
   session: AuthSession;
   onOpenBranchSettings?: () => void;
+  onLogout?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -31,6 +35,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   branchCount,
   session,
   onOpenBranchSettings,
+  onLogout,
 }) => {
   const tabs = [
     {
@@ -168,25 +173,40 @@ export const Navigation: React.FC<NavigationProps> = ({
             })}
           </div>
 
-          {/* Quick Notice if active as branch user */}
-          {session.role === 'branch_user' && (
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                <span>โหมดสาขา: {session.branchName}</span>
+          {/* Actions & Status on Navbar Right side */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Quick Notice if active as branch user */}
+            {session.role === 'branch_user' && (
+              <div className="flex items-center gap-1.5">
+                <div className="hidden sm:flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 font-semibold">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="truncate max-w-[120px]">{session.branchName || session.branchCode}</span>
+                </div>
+                {onOpenBranchSettings && (
+                  <button
+                    onClick={onOpenBranchSettings}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 border border-amber-300 text-xs font-bold transition cursor-pointer"
+                    title="ปรับแต่งภาพหน้าปกและข้อมูลสาขาตัวเอง"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-amber-700" />
+                    <span>ตั้งค่าสาขา</span>
+                  </button>
+                )}
               </div>
-              {onOpenBranchSettings && (
-                <button
-                  onClick={onOpenBranchSettings}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 border border-amber-300 text-xs font-bold transition cursor-pointer"
-                  title="ปรับแต่งภาพหน้าปกและข้อมูลสาขาตัวเอง"
-                >
-                  <Settings className="w-3.5 h-3.5 text-amber-700" />
-                  <span>ตั้งค่าสาขา</span>
-                </button>
-              )}
-            </div>
-          )}
+            )}
+
+            {/* แสดงปุ่มออกจากระบบบนแถบนำทางเมื่อไม่ได้อยู่หน้าหลัก เพื่อความสะดวก */}
+            {activeTab !== 'home' && session.isLoggedIn && onLogout && (
+              <button
+                onClick={onLogout}
+                title="ออกจากระบบ"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition cursor-pointer"
+              >
+                <LogOut className="w-3 h-3 text-rose-600" />
+                <span className="hidden sm:inline">ออกจากระบบ</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </nav>
