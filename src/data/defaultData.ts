@@ -1,4 +1,19 @@
-import { RepairEntry, ShopProfile, BranchUser, RevisionRecord } from '../types';
+import { RepairEntry, ShopProfile, BranchUser, RevisionRecord, GlobalThemeSettings } from '../types';
+
+export const DEFAULT_GLOBAL_THEME: GlobalThemeSettings = {
+  brandTitle: 'คัมภีร์ลับช่างซวดลวด',
+  brandSubtitle: 'ศูนย์รวมเทคนิคชี้จุดเสีย • วิธีถอดประกอบ • คลังวงจรและคัมภีร์งานซ่อม',
+  taglineBadge: 'Fix it Pro',
+  bannerLayout: 'split',
+  fontFamily: 'prompt',
+  fontScale: 'md',
+  headerFontWeight: 'black',
+  bgTone: 'circuit-dark',
+  showCircuitWatermark: true,
+  watermarkOpacity: 0.05,
+  watermarkDensity: 'balanced',
+  updatedAt: '2026-10-31T00:00:00.000Z',
+};
 
 export const DEFAULT_SHOP_PROFILE: ShopProfile = {
   shopName: "คัมภีร์ยุทธซ่างซวดลวดFix it (สำนักงานใหญ่)",
@@ -286,6 +301,29 @@ export const INITIAL_DISASSEMBLY_GUIDES: import('../types').DisassemblyGuide[] =
 ];
 
 export const INITIAL_REVISIONS: RevisionRecord[] = [
+  {
+    revision: 'Rev 1.8.0',
+    date: '2026-10-31',
+    description: 'ปรับลดขนาดหน้าปกกระชับมินิมอลเฉพาะหน้าหลัก + ย้ายโหลด Source และรีเซ็ตไปไว้เมนูตั้งค่าเฉพาะ Admin',
+    details: [
+      'ปรับลดขนาดหน้าปกมินิมอล: ตัดเมนูส่วนเกินบนหัวออก เหลือเฉพาะชื่อคัมภีร์ลับช่างซวดลวด สโลแกน ชื่อร้าน เบอร์โทร และ LINE เพื่อประหยัดพื้นที่แนวตั้ง',
+      'แสดงภาพหน้าปกเฉพาะหน้าหลัก (Home): เมื่อเปิดดูหน้าชี้จุดเสีย, วิธีถอดประกอบ, คลังคัมภีร์รวม, บันทึกละเอียด, หรือ Sheet จะไม่แสดงภาพหน้าปก เพื่อเพิ่มพื้นที่การทำงานและอ่านเนื้อหาได้อย่างเต็มตา',
+      'จัดระเบียบเมนูตั้งค่า (Admin Tools Consolidation): ย้ายปุ่ม "โหลด Source Code (.ZIP)" และ "รีเซ็ต / เคลียร์งานเก่า" รวมถึง "ปรับแต่งระบบ (ฟอนต์/พื้นหลัง)" เข้าไปอยู่ในแท็บ "ตั้งค่า" โดยเปิดให้เข้าถึงได้เฉพาะลิงก์ Admin เท่านั้น',
+      'คงปุ่มออกจากระบบไว้ที่มุมขวาบนอย่างเป็นสัดส่วน สะดวกต่อการใช้งาน',
+    ],
+  },
+  {
+    revision: 'Rev 1.7.0',
+    date: '2026-10-31',
+    description: 'ระบบ Admin ปรับแต่งตัวหนังสือ/พื้นหลังซิงก์สาขา Real-time (ไม่ทับข้อมูลสาขา) + ลายน้ำสัญลักษณ์ไฟฟ้าอิเล็กทรอนิกส์ + จัดหน้าปกเป็นระเบียบ',
+    details: [
+      'ระบบปรับแต่งส่วนกลางโดยแอดมิน (Admin Global Customizer): ปรับแต่งฟอนต์ตัวหนังสือ (Prompt, Kanit, Sarabun, Chakra Petch), สเกลขนาดตัวอักษร, จัดเรียงข้อความหัวข้อ/สโลแกน, และโทนสีพื้นหลัง',
+      'ซิงก์สู่ทุกลิงก์สาขาแบบ Real-time: เมื่อแอดมินบันทึกหรืออัปเดตระบบ ลิงก์สาขา (?branch=...) จะอัปเดตสไตล์และข้อความหลักตามทันทีอัตโนมัติ',
+      'แยกข้อมูลสาขาเป็นอิสระ 100% (Branch Data Isolation): ยืนยันข้อมูลสาขาที่สร้างไว้, ภาพหน้าปกสาขา, ข้อมูลติดต่อ, เบอร์โทร, LINE ID, ประวัติงานซ่อม/จุดเสีย จะไม่ถูกเปลี่ยนแปลงหรือเขียนทับเด็ดขาด',
+      'ลายน้ำพื้นหลังสัญลักษณ์ทางไฟฟ้าและอิเล็กทรอนิกส์ (Schematic Watermark): สัญลักษณ์วิศวกรรมไฟฟ้าคมชัด (Resistor, Capacitor, Ground, Diode, LED, Transistor, Inductor, AC Source, MCU, Op-Amp, Logic Gate, Ohm Ω) บางเบาโปร่งแสง ไม่บดบังข้อความ',
+      'จัดเรียงข้อความบนหน้าปก (Header Cover Layout) ให้เป็นระเบียบเรียบร้อย: ย้ายปุ่มเครื่องมือ, ป้ายสถานะ, โลโก้, ข้อมูลร้าน, เบอร์โทร และ LINE ให้เป็นสัดส่วน ดูง่าย สบายตาทั้งจอมือถือและคอมพิวเตอร์',
+    ],
+  },
   {
     revision: 'Rev 1.6.0',
     date: '2026-10-30',
